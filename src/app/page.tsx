@@ -1,103 +1,203 @@
-import Image from "next/image";
+'use client'
 
-export default function Home() {
+import React, { useState } from 'react'
+import { validateClassCodeFormat } from '@/lib/auth'
+
+export default function HomePage() {
+  const [sessionCode, setSessionCode] = useState('')
+  const [studentName, setStudentName] = useState('')
+  const [studentId, setStudentId] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState('')
+
+  // セッション参加処理
+  const handleJoinSession = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError('')
+
+    if (!sessionCode || !studentName) {
+      setError('セッションコードと名前を入力してください')
+      return
+    }
+
+    if (!validateClassCodeFormat(sessionCode)) {
+      setError('セッションコードの形式が正しくありません（例：AB12CD34）')
+      return
+    }
+
+    try {
+      setIsLoading(true)
+
+      const response = await fetch('/api/auth/join-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionCode: sessionCode.toUpperCase(),
+          studentName: studentName.trim(),
+          studentId: studentId.trim() || undefined
+        })
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        setError(data.error || 'セッション参加に失敗しました')
+        return
+      }
+
+      // セッション参加成功 - 教室ページに遷移
+      // ユーザー情報を保存
+      const userInfo = {
+        studentName: studentName.trim(),
+        studentId: studentId.trim() || undefined,
+        joinedAt: new Date().toISOString()
+      }
+      localStorage.setItem(`classroom_user_${sessionCode.toUpperCase()}`, JSON.stringify(userInfo))
+      
+      // 教室画面にリダイレクト
+      window.location.href = `/classroom/${sessionCode.toUpperCase()}`
+
+    } catch (err) {
+      console.error('Join session error:', err)
+      setError('ネットワークエラーが発生しました')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+    <div className="min-h-screen bg-gradient-to-br from-teal-400 via-cyan-500 to-blue-500 flex items-center justify-center p-4">
+      <div className="bg-gradient-to-br from-white via-gray-50 to-cyan-50 rounded-2xl shadow-2xl w-full max-w-md p-8 border border-cyan-100">
+        {/* ロゴとタイトル */}
+        <div className="text-center mb-8">
+          <div className="text-4xl mb-4">🏛️</div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">
+            公共のキョウシツ
+          </h1>
+          <p className="text-sm text-gray-600">
+            民主主義授業支援プラットフォーム
+          </p>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+
+        {/* 参加フォーム */}
+        <form onSubmit={handleJoinSession} className="space-y-6">
+          {/* セッションコード入力 */}
+          <div>
+            <label 
+              htmlFor="sessionCode" 
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
+              セッションコード
+            </label>
+            <input
+              id="sessionCode"
+              type="text"
+              value={sessionCode}
+              onChange={(e) => setSessionCode(e.target.value.toUpperCase())}
+              placeholder="AB12CD34"
+              maxLength={8}
+              disabled={isLoading}
+              className="w-full px-4 py-3 text-center text-lg font-mono border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 tracking-wider text-gray-900 font-bold placeholder-gray-400"
+              required
+            />
+            <div className="text-xs text-gray-500 mt-1">
+              先生から伝えられた8桁のコードを入力
+            </div>
+          </div>
+
+          {/* 名前入力 */}
+          <div>
+            <label 
+              htmlFor="studentName" 
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
+              名前
+            </label>
+            <input
+              id="studentName"
+              type="text"
+              value={studentName}
+              onChange={(e) => setStudentName(e.target.value)}
+              placeholder="山田太郎"
+              maxLength={50}
+              disabled={isLoading}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 text-gray-900 font-bold placeholder-gray-500"
+              required
+            />
+          </div>
+
+          {/* 出席番号入力（任意） */}
+          <div>
+            <label 
+              htmlFor="studentId" 
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
+              出席番号（任意）
+            </label>
+            <input
+              id="studentId"
+              type="text"
+              value={studentId}
+              onChange={(e) => setStudentId(e.target.value)}
+              placeholder="01"
+              maxLength={20}
+              disabled={isLoading}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 text-gray-900 font-bold placeholder-gray-500"
+            />
+          </div>
+
+          {/* エラーメッセージ */}
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+              <div className="text-sm text-red-800">
+                ⚠️ {error}
+              </div>
+            </div>
+          )}
+
+          {/* 参加ボタン */}
+          <button
+            type="submit"
+            disabled={isLoading || !sessionCode || !studentName}
+            className="w-full bg-blue-500 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+          >
+            {isLoading ? '参加中...' : '授業に参加する'}
+          </button>
+        </form>
+
+        {/* 注意事項 */}
+        <div className="mt-6 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+          <div className="text-sm text-gray-700">
+            <div className="font-semibold mb-2">📋 参加について</div>
+            <ul className="text-xs space-y-1 list-disc list-inside">
+              <li>セッションコードは先生から伝えられます</li>
+              <li>名前は同じセッション内で重複できません</li>
+              <li>参加後、座席を選択してトピックを提出します</li>
+              <li>他の生徒とチャットで交流できます</li>
+            </ul>
+          </div>
+        </div>
+
+        {/* ナビゲーションリンク */}
+        <div className="mt-6 text-center space-y-2">
+          <div>
+            <a 
+              href="/teacher"
+              className="text-sm text-blue-600 hover:text-blue-800 underline"
+            >
+              👨‍🏫 教員の方はこちら
+            </a>
+          </div>
+          <div>
+            <a 
+              href="/metaverse"
+              className="text-sm text-purple-600 hover:text-purple-800 underline"
+            >
+              🌐 メタバース教室で過去の授業を見る
+            </a>
+          </div>
+        </div>
+      </div>
     </div>
-  );
+  )
 }
