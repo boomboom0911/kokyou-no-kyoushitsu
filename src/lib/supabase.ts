@@ -9,8 +9,8 @@ if (!supabaseUrl || !supabaseAnonKey) {
   console.warn('🚧 Supabase environment variables are not set. Running in demo mode.')
 }
 
-// デモモード判定（開発中は強制的にデモモード）
-export const isDemo = true || !supabaseUrl || !supabaseAnonKey || 
+// デモモード判定（本番環境では実際のデータベースを使用）
+export const isDemo = !supabaseUrl || !supabaseAnonKey || 
   supabaseUrl === 'your-project-url' || 
   supabaseAnonKey === 'your-anon-key'
 
